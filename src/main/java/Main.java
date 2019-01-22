@@ -200,7 +200,7 @@ public final class Main {
   /**
    * Example pipeline.
    */
-  public static class MyPipeline implements VisionPipeline {
+ /* public static class MyPipeline implements VisionPipeline {
     public int val;
 
     @Override
@@ -208,6 +208,7 @@ public final class Main {
       val += 1;
     }
   }
+  */
 
   /**
    * Main.
