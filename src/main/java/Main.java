@@ -247,7 +247,7 @@ public final class Main {
       });
       VisionThread visionThread = new VisionThread(cameras.get(0),
               new GripPipeline(), pipeline -> {
-                findContoursOutput();
+                ArrayList<MatOfPoint> contourReport = pipeline.findContoursOutput();
                 
       });
        */
