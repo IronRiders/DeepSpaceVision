@@ -232,6 +232,7 @@ public final class Main {
       System.out.println("Setting up NetworkTables client for team " + team);
       ntinst.startClientTeam(team);
     }
+     NetworkTable table = ntinst.getTable("GRIP");
 
     // start cameras
     List<VideoSource> cameras = new ArrayList<>();
@@ -247,8 +248,14 @@ public final class Main {
       });
       VisionThread visionThread = new VisionThread(cameras.get(0),
               new GripPipeline(), pipeline -> {
-                ArrayList<MatOfPoint> contourReport = pipeline.findContoursOutput();
-                
+               // ArrayList<MatOfPoint> contourReport = pipeline.findContoursOutput();
+                if (!pipeline.filterContoursOutput().isEmpty()) {
+                  Rect r = Imgproc.boundingRect(pipeline.filterContoursOutput().get(0));
+                  synchronized (imgLock) {
+                      centerX = r.x + (r.width / 2);
+                      table.putNumber("CenterX",CenterX) // try .putNumberArray
+
+                  }
       });
        */
       visionThread.start();
