@@ -253,7 +253,8 @@ public final class Main {
                   Rect r = Imgproc.boundingRect(pipeline.filterContoursOutput().get(0));
                   synchronized (imgLock) {
                       centerX = r.x + (r.width / 2);
-                      table.putNumber("CenterX",CenterX) // try .putNumberArray
+                      NetworkTableEntry targetCenterXEntry = table.getEntry("targetCenterX");
+                      table.putNumber(centerX) // try .putNumberArray
 
                   }
       });
