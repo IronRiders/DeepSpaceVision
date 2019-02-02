@@ -23,6 +23,7 @@ import edu.wpi.cscore.UsbCamera;
 import edu.wpi.cscore.VideoSource;
 import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.networktables.*;
 import edu.wpi.first.vision.VisionPipeline;
 import edu.wpi.first.vision.VisionThread;
 
@@ -242,23 +243,25 @@ public final class Main {
 
     // start image processing on camera 0 if present
     if (cameras.size() >= 1) {
-      //VisionThread visionThread = new VisionThread(cameras.get(0),
-        //      new MyPipeline(), pipeline -> {
-        // do something with pipeline results
-      });
       VisionThread visionThread = new VisionThread(cameras.get(0),
               new GripPipeline(), pipeline -> {
-               // ArrayList<MatOfPoint> contourReport = pipeline.findContoursOutput();
                 if (!pipeline.filterContoursOutput().isEmpty()) {
                   Rect r = Imgproc.boundingRect(pipeline.filterContoursOutput().get(0));
                   synchronized (imgLock) {
-                      centerX = r.x + (r.width / 2);
+                      double centerX = r.x + (r.width / 2);
+                      double startingX = r.x;
+                      double endingX = r.x + r.width;
                       NetworkTableEntry targetCenterXEntry = table.getEntry("targetCenterX");
-                      table.putNumber(centerX) // try .putNumberArray
+                      targetCenterXEntry.setDouble(centerX);
+                      NetworkTableEntry targetStartingXEntry = table.getEntry("targetStartingX");
+                      targetStartingXEntry.setDouble(startingX);
+                      NetworkTableEntry targetEndingXEntry = table.getEntry("targetEndingX");
+                      targetEndingXEntry.setDouble(endingX);
+
 
                   }
+                }     
       });
-       */
       visionThread.start();
     }
 
