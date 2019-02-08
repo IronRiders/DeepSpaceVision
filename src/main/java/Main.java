@@ -241,6 +241,18 @@ public final class Main {
       cameras.add(startCamera(cameraConfig));
     }
 
+    // Constants that will be placed back on the top once the code is done
+    import java.lang.Math;
+    private final int tapeAngle = 14;
+    private final double distanceBetweenTapeCentersInches = 9; // Dummy value
+    private double distanceBetweenTapeCentersPixels;
+    private double pixelsPerInch = distanceBetweenTapeCentersPixels/distanceBetweenTapeCentersPixels; 
+    private int tapeCenterPixelsToCenterScreen;
+    private double tapeDistanceFromRobotInches;
+    private double cameraViewAngle = 78;
+
+    private int contour1X, contour2X;
+
     // start image processing on camera 0 if present
     if (cameras.size() >= 1) {
       VisionThread visionThread = new VisionThread(cameras.get(0),
@@ -251,14 +263,15 @@ public final class Main {
                       double centerX = r.x + (r.width / 2);
                       double startingX = r.x;
                       double endingX = r.x + r.width;
-                      NetworkTableEntry targetCenterXEntry = table.getEntry("targetCenterX");
-                      targetCenterXEntry.setDouble(centerX);
-                      NetworkTableEntry targetStartingXEntry = table.getEntry("targetStartingX");
-                      targetStartingXEntry.setDouble(startingX);
-                      NetworkTableEntry targetEndingXEntry = table.getEntry("targetEndingX");
-                      targetEndingXEntry.setDouble(endingX);
-
-
+                      NetworkTableEntry contour1XTableValue = table.getEntry("contour1X");
+                      NetworkTableEntry contour2XTableValue = table.getEntry("contour2X");
+                      contour1X = contour1XTableValue.getDouble();
+                      contour2X = contour2XTableValue.getDouble();
+                      distanceBetweenTapeCentersPixels = contour2X - contour1X;
+                      tapeCenterPixelsToCenterScreen = (contour2X + contour1X) / 2 - centerX; // finds how far right the tapes are from the center of the screen in pixels
+                      pixelsPerInch = distanceBetweenTapeCentersPixels / distanceBetweenTapeCentersInches;
+                      
+                      // this is where it either spits out data to the main robot code or runs it from here
                   }
                 }     
       });
