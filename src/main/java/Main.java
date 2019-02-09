@@ -10,7 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.lang.Math.*;
+import java.lang.Math;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -245,7 +245,7 @@ public final class Main {
     // Constants that will be placed back on the top once the code is done
 
     final int tapeAngle = 14;
-    final double distanceBetweenTapeCentersInches = 2 * (2.75 * sin(14)) + 8; // 2 * (Half of tape length * sin(angle of tape)) + distance between top inner tips
+    final double distanceBetweenTapeCentersInches = 2 * (2.75 * Math.sin(14)) + 8; // 2 * (Half of tape length * sin(angle of tape)) + distance between top inner tips
     double distanceBetweenTapeCentersPixels;
     double inchesPerPixel; 
     int tapeCenterPixelsToCenterScreen;
@@ -259,7 +259,7 @@ public final class Main {
     // start image processing on camera 0 if present
     if (cameras.size() >= 1) {
       VisionThread visionThread = new VisionThread(cameras.get(0),
-              new GripPipeline(), pipeline -> { // the constructor in the wpi says (camera, visionpipeline, this)
+              new GripPipeline(), pipeline -> { // the constructor in the wpi says (camera, visionpipeline, this - Iterative robot)
                 if (!pipeline.filterContoursOutput().isEmpty()) {
                   Rect r = Imgproc.boundingRect(pipeline.filterContoursOutput().get(0));
                   synchronized (imgLock) {
@@ -278,11 +278,11 @@ public final class Main {
                       newAngle = distanceBetweenTapeCentersPixels/r.width * 39; // half of cone of vision is 39 degrees
                       
                       // these two values will be used to determing the path of the robot
-                      distanceToRobotInches = (distanceBetweenTapeCentersInches / 2) / tan(newAngle);
+                      distanceToRobotInches = (distanceBetweenTapeCentersInches / 2) / Math.tan(newAngle);
                       tapeDistanceRightInches = tapeCenterPixelsToCenterScreen * inchesPerPixel;
 
                       // this is where it either spits out data to the main robot code or runs it from here
-                      
+
                   }
                 }     
       });
