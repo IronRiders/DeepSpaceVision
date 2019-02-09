@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.lang.Math.*;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -242,21 +243,23 @@ public final class Main {
     }
 
     // Constants that will be placed back on the top once the code is done
-    import java.lang.Math;
-    private final int tapeAngle = 14;
-    private final double distanceBetweenTapeCentersInches = 9; // Dummy value
-    private double distanceBetweenTapeCentersPixels;
-    private double pixelsPerInch = distanceBetweenTapeCentersPixels/distanceBetweenTapeCentersPixels; 
-    private int tapeCenterPixelsToCenterScreen;
-    private double tapeDistanceFromRobotInches;
-    private double cameraViewAngle = 78;
 
-    private int contour1X, contour2X;
+    final int tapeAngle = 14;
+    final double distanceBetweenTapeCentersInches = 2 * (2.75 * sin(14)) + 8; // 2 * (Half of tape length * sin(angle of tape)) + distance between top inner tips
+    double distanceBetweenTapeCentersPixels;
+    double inchesPerPixel; 
+    int tapeCenterPixelsToCenterScreen;
+    double tapeDistanceFromRobotInches;
+    double cameraViewAngle = 78;
+    double distanceToRobotInches;
+    double tapeDistanceRightInches;
+    int newAngle;
+    int contour1X, contour2X;
 
     // start image processing on camera 0 if present
     if (cameras.size() >= 1) {
       VisionThread visionThread = new VisionThread(cameras.get(0),
-              new GripPipeline(), pipeline -> {
+              new GripPipeline(), pipeline -> { // the constructor in the wpi says (camera, visionpipeline, this)
                 if (!pipeline.filterContoursOutput().isEmpty()) {
                   Rect r = Imgproc.boundingRect(pipeline.filterContoursOutput().get(0));
                   synchronized (imgLock) {
@@ -267,11 +270,19 @@ public final class Main {
                       NetworkTableEntry contour2XTableValue = table.getEntry("contour2X");
                       contour1X = contour1XTableValue.getDouble();
                       contour2X = contour2XTableValue.getDouble();
+                      // Calculate the distance between the robot and the tape.
                       distanceBetweenTapeCentersPixels = contour2X - contour1X;
                       tapeCenterPixelsToCenterScreen = (contour2X + contour1X) / 2 - centerX; // finds how far right the tapes are from the center of the screen in pixels
-                      pixelsPerInch = distanceBetweenTapeCentersPixels / distanceBetweenTapeCentersInches;
+                      inchesPerPixel = distanceBetweenTapeCentersInches / distanceBetweenTapeCentersPixels ;
+                      distanceBetweenTapeCentersInches = distanceBetweenTapeCentersPixels * inchesPerPixel;
+                      newAngle = distanceBetweenTapeCentersPixels/r.width * 39; // half of cone of vision is 39 degrees
                       
+                      // these two values will be used to determing the path of the robot
+                      distanceToRobotInches = (distanceBetweenTapeCentersInches / 2) / tan(newAngle);
+                      tapeDistanceRightInches = tapeCenterPixelsToCenterScreen * inchesPerPixel;
+
                       // this is where it either spits out data to the main robot code or runs it from here
+                      
                   }
                 }     
       });
