@@ -248,10 +248,22 @@ public final class Main {
     }
 
   // Constants for Distance to robot calculations
-  final int tapeAngle = 14;
-  final double cameraViewAngle = 78;
-  final double distanceBetweenTapeCentersInches = 2 * (2.75 * Math.sin(14)) + 8; // 2 * (Half of tape length * sin(angle of tape)) + distance between top inner tips
+  final int TAPE_ANGLE = 14;
+  final double CAMERA_VIEW_ANGLE = 78;
+  final double LENGTH_OF_BOUNDING_RECTANGLE_INCHES = 2 * Math.sin(180-90-TAPE_ANGLE) + 5.5 * Math.sin(14);
+  final double HEIGHT_OF_BOUNDING_RECTANGLE_INCHES = 5.5 * Math.sin(TAPE_ANGLE) + 2 * Math.cos(180 - 90 - TAPE_ANGLE);
+  final double distanceBetweenTapeCentersInches = LENGTH_OF_BOUNDING_RECTANGLE_INCHES + 8; // 2 * (Width of bounding square) (times 2 squares / half their width) / 2 + distance between top inner tips
+  
+  // Creating networktables and getting their entrees
+  NetworkTableInstance piOutpuTableInstance = NetworkTableInstance.create();
+  NetworkTable piOutpuTable = piOutpuTableInstance.getTable("PI_Output");
+  NetworkTableEntry distanceToRobotEntry = piOutpuTable.getEntry("DistanceToRobotInches");
+  NetworkTableEntry distanceRightToRobotEntry = piOutpuTable.getEntry("DistanceRightToRobot");
+  NetworkTableEntry angleOfRobotToTape = piOutpuTable.getEntry("AngleOfRobotToTape"); // Not Implemented
 
+  // Camera Resolution: 1080p
+  final int HEIGHT_OF_CAMERA_PIXELS = 1080;
+  final int WIDTH_OF_CAMERA_PIXELS = 1920;
   
 
     // start image processing on camera 0 if present
@@ -259,33 +271,55 @@ public final class Main {
       VisionThread visionThread = new VisionThread(cameras.get(0),
               new GripPipeline(), pipeline -> { // the constructor in the wpi says (camera, visionpipeline, this - Iterative robot)
                 if (!pipeline.filterContoursOutput().isEmpty()) {
-                  Rect r = Imgproc.boundingRect(pipeline.filterContoursOutput().get(0));
-                  synchronized (r) {
-                      double inchesPerPixel, newAngle;
-                      double distanceBetweenTapeCentersPixels, distanceToRobotInches, tapeDistanceRightInches, tapeDistanceFromRobotInches;
-                      int contour1X, contour2X, tapeCenterPixelsToCenterScreen; 
-                      double centerX = r.x + (r.width / 2);
-                      double startingX = r.x;
-                      double endingX = r.x + r.width;
-                      NetworkTableEntry contour1XTableValue = table.getEntry("contour1X");
-                      NetworkTableEntry contour2XTableValue = table.getEntry("contour2X");
-                      contour1X = (int) contour1XTableValue.getNumber(0);
-                      contour2X = (int) contour2XTableValue.getNumber(0);
+                  Rect contour1 = Imgproc.boundingRect(pipeline.filterContoursOutput().get(0));
+                  Rect contour2 = Imgproc.boundingRect(pipeline.filterContoursOutput().get(1));
+                  synchronized (contour1) {
+                      double inchesPerPixel, 
+                              newAngle,
+                              distanceBetweenTapeCentersPixels, 
+                              distanceToRobotInches, 
+                              tapeDistanceRightInches,
+                              distanceToRobotBasedOnTapeHeight;
+                      int tapeCenterPixelsToCenterScreen;
+                      int centerX1 = contour1.x + (contour1.width / 2);
+                      int centerX2 = contour2.x + (contour2.width / 2);
+                      int heightOfTapePixels = (contour1.height + contour2.height) / 2;
+
+
+                      // Not Needed because x1 and x2 are found above
+                      // int contour1X, contour2X;
+                      // NetworkTableEntry contour1XTableValue = table.getEntry("contour1X"); // Needs to be changed to match real networktable key
+                      // NetworkTableEntry contour2XTableValue = table.getEntry("contour2X");
+                      // contour1X = (int) contour1XTableValue.getNumber(0);
+                      // contour2X = (int) contour2XTableValue.getNumber(0);
+
                       // Calculate the distance between the robot and the tape.
-                      distanceBetweenTapeCentersPixels = contour2X - contour1X;
-                      tapeCenterPixelsToCenterScreen = (int) ((contour2X + contour1X) / 2 - centerX); // finds how far right
+                      distanceBetweenTapeCentersPixels = centerX2 - centerX1;
+                      tapeCenterPixelsToCenterScreen = (centerX2 + centerX1) / 2 - WIDTH_OF_CAMERA_PIXELS; // finds how far right
                                                                                                       // the tapes are from
                                                                                                       // the center of the
                                                                                                       // screen in pixels
                       inchesPerPixel = distanceBetweenTapeCentersInches / distanceBetweenTapeCentersPixels ;
-                      distanceBetweenTapeCentersInches = distanceBetweenTapeCentersPixels * inchesPerPixel;
-                      newAngle = distanceBetweenTapeCentersPixels/r.width * 39; // half of cone of vision is 39 degrees
+                      newAngle = distanceBetweenTapeCentersPixels/WIDTH_OF_CAMERA_PIXELS * CAMERA_VIEW_ANGLE/2; // half of cone of vision is 39 degrees
+
                       
-                      // these two values will be used to determing the path of the robot
+                      // these values will be used to determing the path of the robot
                       distanceToRobotInches = (distanceBetweenTapeCentersInches / 2) / Math.tan(newAngle);
                       tapeDistanceRightInches = tapeCenterPixelsToCenterScreen * inchesPerPixel;
+                      distanceToRobotBasedOnTapeHeight = (heightOfTapePixels / 2 * inchesPerPixel) / Math.tan(CAMERA_VIEW_ANGLE / 2 * heightOfTapePixels / HEIGHT_OF_CAMERA_PIXELS);
 
-                      // this is where it either spits out data to the main robot code or runs it from here
+                      // Output values to NetworkTables if two calculated values are within X percent
+                      if(Math.abs(distanceToRobotBasedOnTapeHeight - distanceToRobotInches)/ distanceToRobotInches < 0.10) {
+                        distanceToRobotEntry.setDouble(distanceToRobotInches);
+                        distanceRightToRobotEntry.setDouble(tapeDistanceRightInches);
+                        angleOfRobotToTape.setDouble(0); // dummy value
+                      }
+                      else {
+                        distanceToRobotEntry.setDouble(-1); // Impossible value
+                        distanceRightToRobotEntry.setDouble(0); // dummy value
+                        angleOfRobotToTape.setDouble(360); // dummy value
+                      }
+                      
 
                   }
                 }     
