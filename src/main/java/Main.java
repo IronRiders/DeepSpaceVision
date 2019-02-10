@@ -10,6 +10,9 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.naming.directory.NoSuchAttributeException;
+
 import java.lang.Math;
 
 import com.google.gson.Gson;
@@ -244,19 +247,12 @@ public final class Main {
       cameras.add(startCamera(cameraConfig));
     }
 
-    // Constants that will be placed back on the top once the code is done
+  // Constants for Distance to robot calculations
+  final int tapeAngle = 14;
+  final double cameraViewAngle = 78;
+  final double distanceBetweenTapeCentersInches = 2 * (2.75 * Math.sin(14)) + 8; // 2 * (Half of tape length * sin(angle of tape)) + distance between top inner tips
 
-    final int tapeAngle = 14;
-    final double distanceBetweenTapeCentersInches = 2 * (2.75 * Math.sin(14)) + 8; // 2 * (Half of tape length * sin(angle of tape)) + distance between top inner tips
-    double distanceBetweenTapeCentersPixels;
-    double inchesPerPixel; 
-    int tapeCenterPixelsToCenterScreen;
-    double tapeDistanceFromRobotInches;
-    double cameraViewAngle = 78;
-    double distanceToRobotInches;
-    double tapeDistanceRightInches;
-    int newAngle;
-    int contour1X, contour2X;
+  
 
     // start image processing on camera 0 if present
     if (cameras.size() >= 1) {
@@ -264,17 +260,23 @@ public final class Main {
               new GripPipeline(), pipeline -> { // the constructor in the wpi says (camera, visionpipeline, this - Iterative robot)
                 if (!pipeline.filterContoursOutput().isEmpty()) {
                   Rect r = Imgproc.boundingRect(pipeline.filterContoursOutput().get(0));
-                  synchronized (imgLock) {
+                  synchronized (r) {
+                      double inchesPerPixel, newAngle;
+                      double distanceBetweenTapeCentersPixels, distanceToRobotInches, tapeDistanceRightInches, tapeDistanceFromRobotInches;
+                      int contour1X, contour2X, tapeCenterPixelsToCenterScreen; 
                       double centerX = r.x + (r.width / 2);
                       double startingX = r.x;
                       double endingX = r.x + r.width;
                       NetworkTableEntry contour1XTableValue = table.getEntry("contour1X");
                       NetworkTableEntry contour2XTableValue = table.getEntry("contour2X");
-                      contour1X = contour1XTableValue.getDouble();
-                      contour2X = contour2XTableValue.getDouble();
+                      contour1X = (int) contour1XTableValue.getNumber(0);
+                      contour2X = (int) contour2XTableValue.getNumber(0);
                       // Calculate the distance between the robot and the tape.
                       distanceBetweenTapeCentersPixels = contour2X - contour1X;
-                      tapeCenterPixelsToCenterScreen = (contour2X + contour1X) / 2 - centerX; // finds how far right the tapes are from the center of the screen in pixels
+                      tapeCenterPixelsToCenterScreen = (int) ((contour2X + contour1X) / 2 - centerX); // finds how far right
+                                                                                                      // the tapes are from
+                                                                                                      // the center of the
+                                                                                                      // screen in pixels
                       inchesPerPixel = distanceBetweenTapeCentersInches / distanceBetweenTapeCentersPixels ;
                       distanceBetweenTapeCentersInches = distanceBetweenTapeCentersPixels * inchesPerPixel;
                       newAngle = distanceBetweenTapeCentersPixels/r.width * 39; // half of cone of vision is 39 degrees
