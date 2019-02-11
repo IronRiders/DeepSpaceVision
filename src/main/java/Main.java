@@ -249,17 +249,17 @@ public final class Main {
 
   // Constants for Distance to robot calculations
   final int TAPE_ANGLE = 14;
-  final double CAMERA_VIEW_ANGLE = 78;
+  final double CAMERA_VIEW_ANGLE = 78; // Double check is it diagonal angle or horizontal
   final double LENGTH_OF_BOUNDING_RECTANGLE_INCHES = 2 * Math.sin(180-90-TAPE_ANGLE) + 5.5 * Math.sin(14);
   final double HEIGHT_OF_BOUNDING_RECTANGLE_INCHES = 5.5 * Math.sin(TAPE_ANGLE) + 2 * Math.cos(180 - 90 - TAPE_ANGLE);
   final double distanceBetweenTapeCentersInches = LENGTH_OF_BOUNDING_RECTANGLE_INCHES + 8; // 2 * (Width of bounding square) (times 2 squares / half their width) / 2 + distance between top inner tips
   
   // Creating networktables and getting their entrees
-  NetworkTableInstance piOutpuTableInstance = NetworkTableInstance.create();
-  NetworkTable piOutpuTable = piOutpuTableInstance.getTable("PI_Output");
-  NetworkTableEntry distanceToRobotEntry = piOutpuTable.getEntry("DistanceToRobotInches");
-  NetworkTableEntry distanceRightToRobotEntry = piOutpuTable.getEntry("DistanceRightToRobot");
-  NetworkTableEntry angleOfRobotToTape = piOutpuTable.getEntry("AngleOfRobotToTape"); // Not Implemented
+  // NetworkTableInstance piOutpuTableInstance = NetworkTableInstance.create();
+  // NetworkTable piOutpuTable = piOutpuTableInstance.getTable("PI_Output");
+  NetworkTableEntry distanceToRobotEntry = ntinst.getEntry("DistanceToRobotInches");
+  NetworkTableEntry distanceRightToRobotEntry = ntinst.getEntry("DistanceRightToRobot");
+  NetworkTableEntry angleOfRobotToTape = ntinst.getEntry("AngleOfRobotToTape"); // Not Implemented
 
   // Camera Resolution: 1080p
   final int HEIGHT_OF_CAMERA_PIXELS = 1080;
