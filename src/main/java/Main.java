@@ -257,9 +257,9 @@ public final class Main {
   // Creating networktables and getting their entrees
   // NetworkTableInstance piOutpuTableInstance = NetworkTableInstance.create();
   // NetworkTable piOutpuTable = piOutpuTableInstance.getTable("PI_Output");
-  NetworkTableEntry distanceToRobotEntry = ntinst.getEntry("DistanceToRobotInches");
-  NetworkTableEntry distanceRightToRobotEntry = ntinst.getEntry("DistanceRightToRobotInches");
-  NetworkTableEntry angleOfRobotToTapeEntry = ntinst.getEntry("AngleOfRobotToTapeRadians"); // Not Implemented
+  NetworkTableEntry distanceToRobotEntry = table.getEntry("DistanceToRobotInches");
+  NetworkTableEntry distanceRightToRobotEntry = table.getEntry("DistanceRightToRobotInches");
+  NetworkTableEntry angleOfRobotToTapeEntry = table.getEntry("AngleOfRobotToTapeRadians"); // Not Implemented
 
   // Camera Resolution: 1080p
   final int HEIGHT_OF_CAMERA_PIXELS = 1080;
