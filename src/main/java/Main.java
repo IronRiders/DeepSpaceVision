@@ -32,6 +32,7 @@ import edu.wpi.first.vision.VisionPipeline;
 import edu.wpi.first.vision.VisionThread;
 
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfPoint;
 import org.opencv.core.Rect;
 import org.opencv.imgproc.Imgproc;
 
@@ -84,6 +85,18 @@ public final class Main {
   public static int team;
   public static boolean server;
   public static List<CameraConfig> cameraConfigs = new ArrayList<>();
+  
+    // Constants for Distance to robot calculations
+    final static double TAPE_ANGLE = 14. / 360 * 2 * Math.PI; // In radians
+    final static double CAMERA_VIEW_ANGLE = 78. / 360 * 2 * Math.PI; // Double check is it diagonal angle or horizontal (in radians)
+    final static double LENGTH_OF_BOUNDING_RECTANGLE_INCHES = 2 * Math.sin(180-90-TAPE_ANGLE) + 5.5 * Math.sin(14);
+    final static double HEIGHT_OF_BOUNDING_RECTANGLE_INCHES = 5.5 * Math.sin(TAPE_ANGLE) + 2 * Math.cos(180 - 90 - TAPE_ANGLE);
+    final static double distanceBetweenTapeCentersInches = LENGTH_OF_BOUNDING_RECTANGLE_INCHES + 8; // 2 * (Width of bounding square) (times 2 squares / half their width) / 2 + distance between top inner tips
+  
+    // Camera Resolution: 1080p
+    final static int HEIGHT_OF_CAMERA_PIXELS = 1080;
+    final static int WIDTH_OF_CAMERA_PIXELS = 1920;
+
 
   private Main() {
   }
@@ -240,6 +253,12 @@ public final class Main {
       ntinst.startClientTeam(team);
     }
      NetworkTable table = ntinst.getTable("GRIP");
+    // Creating networktables and getting their entrees
+    // NetworkTableInstance piOutpuTableInstance = NetworkTableInstance.create();
+    // NetworkTable piOutpuTable = piOutpuTableInstance.getTable("PI_Output");
+    NetworkTableEntry distanceToRobotEntry = table.getEntry("DistanceToRobotInches");
+    NetworkTableEntry distanceRightToRobotEntry = table.getEntry("DistanceRightToRobotInches");
+    NetworkTableEntry angleOfRobotToTapeEntry = table.getEntry("AngleOfRobotToTapeRadians"); // Not Implemented
 
     // start cameras
     List<VideoSource> cameras = new ArrayList<>();
@@ -247,33 +266,14 @@ public final class Main {
       cameras.add(startCamera(cameraConfig));
     }
 
-  // Constants for Distance to robot calculations
-  final double TAPE_ANGLE = 14. / 360 * 2 * Math.PI; // In radians
-  final double CAMERA_VIEW_ANGLE = 78. / 360 * 2 * Math.PI; // Double check is it diagonal angle or horizontal (in radians)
-  final double LENGTH_OF_BOUNDING_RECTANGLE_INCHES = 2 * Math.sin(180-90-TAPE_ANGLE) + 5.5 * Math.sin(14);
-  final double HEIGHT_OF_BOUNDING_RECTANGLE_INCHES = 5.5 * Math.sin(TAPE_ANGLE) + 2 * Math.cos(180 - 90 - TAPE_ANGLE);
-  final double distanceBetweenTapeCentersInches = LENGTH_OF_BOUNDING_RECTANGLE_INCHES + 8; // 2 * (Width of bounding square) (times 2 squares / half their width) / 2 + distance between top inner tips
-  
-  // Creating networktables and getting their entrees
-  // NetworkTableInstance piOutpuTableInstance = NetworkTableInstance.create();
-  // NetworkTable piOutpuTable = piOutpuTableInstance.getTable("PI_Output");
-  NetworkTableEntry distanceToRobotEntry = table.getEntry("DistanceToRobotInches");
-  NetworkTableEntry distanceRightToRobotEntry = table.getEntry("DistanceRightToRobotInches");
-  NetworkTableEntry angleOfRobotToTapeEntry = table.getEntry("AngleOfRobotToTapeRadians"); // Not Implemented
-
-  // Camera Resolution: 1080p
-  final int HEIGHT_OF_CAMERA_PIXELS = 1080;
-  final int WIDTH_OF_CAMERA_PIXELS = 1920;
-  
 
     // start image processing on camera 0 if present
     if (cameras.size() >= 1) {
       VisionThread visionThread = new VisionThread(cameras.get(0),
-              new GripPipeline(), pipeline -> { // the constructor in the wpi says (camera, visionpipeline, this - Iterative robot)
+              new GripPipeline(), pipeline -> {
                 if (!pipeline.filterContoursOutput().isEmpty()) {
-                  Rect contour1 = Imgproc.boundingRect(pipeline.filterContoursOutput().get(0));
-                  Rect contour2 = Imgproc.boundingRect(pipeline.filterContoursOutput().get(1));
-                  synchronized (contour1) {
+                  Rect[] contours = getTargetTapes(pipeline);
+                  synchronized (contours[0]) {
                       double inchesPerPixel, 
                               newAngle,
                               distanceBetweenTapeCentersPixels, 
@@ -281,9 +281,9 @@ public final class Main {
                               tapeDistanceRightInches,
                               distanceToRobotBasedOnTapeHeight;
                       int tapeCenterPixelsToCenterScreen;
-                      int centerX1 = contour1.x + (contour1.width / 2);
-                      int centerX2 = contour2.x + (contour2.width / 2);
-                      int heightOfTapePixels = (contour1.height + contour2.height) / 2;
+                      int centerX1 = contours[0].x + (contours[0].width / 2);
+                      int centerX2 = contours[1].x + (contours[1].width / 2);
+                      int heightOfTapePixels = (contours[0].height + contours[1].height) / 2;
 
 
                       // Not Needed because x1 and x2 are found above
@@ -333,5 +333,34 @@ public final class Main {
         return;
       }
     }
+  }
+
+  // Gets the two contours closes to the center of the screen
+  private static Rect[] getTargetTapes(GripPipeline pipeline) {
+    ArrayList<MatOfPoint> contours = pipeline.filterContoursOutput();
+    Rect[] rects = {Imgproc.boundingRect(contours.get(0)), Imgproc.boundingRect(contours.get(1))};
+    if(pipeline.filterContoursOutput().size() == 2) {
+      return rects;
+    }
+    double element0Distance = Math.pow(rects[0].x + rects[0].width / 2 - WIDTH_OF_CAMERA_PIXELS / 2, 2) + 
+                            Math.pow(rects[0].y + rects[0].height / 2 - HEIGHT_OF_CAMERA_PIXELS / 2, 2);
+    double element1Distance = Math.pow(rects[1].x + rects[1].width / 2 - WIDTH_OF_CAMERA_PIXELS / 2, 2) + 
+                            Math.pow(rects[1].y + rects[1].height / 2 - HEIGHT_OF_CAMERA_PIXELS / 2, 2);
+
+    for(int i = 2; i < pipeline.filterContoursOutput().size(); i++) {
+      Rect element = Imgproc.boundingRect(contours.get(i));
+      double distance = Math.pow(element.x + element.width / 2 - WIDTH_OF_CAMERA_PIXELS / 2, 2) + 
+                        Math.pow(element.y + element.height / 2 - HEIGHT_OF_CAMERA_PIXELS / 2, 2);
+      if(distance < element0Distance || distance < element1Distance) {
+        if(element0Distance - distance > element1Distance - distance) {
+          rects[0] = element;
+        }
+        else {
+          rects[1] = element;
+        }
+      }
+
+    }
+    return rects;
   }
 }
