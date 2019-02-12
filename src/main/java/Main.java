@@ -271,7 +271,7 @@ public final class Main {
     if (cameras.size() >= 1) {
       VisionThread visionThread = new VisionThread(cameras.get(0),
               new GripPipeline(), pipeline -> {
-                if (!pipeline.filterContoursOutput().isEmpty()) {
+                if (!pipeline.filterContoursOutput().isEmpty()) { // Everything used inside (from the outside) has to be static
                   Rect[] contours = getTargetTapes(pipeline);
                   synchronized (contours[0]) {
                       double inchesPerPixel, 
@@ -342,6 +342,8 @@ public final class Main {
     if(pipeline.filterContoursOutput().size() == 2) {
       return rects;
     }
+
+    // I don't squareroot the answers because if x^2 > y^2, then x > y
     double element0Distance = Math.pow(rects[0].x + rects[0].width / 2 - WIDTH_OF_CAMERA_PIXELS / 2, 2) + 
                             Math.pow(rects[0].y + rects[0].height / 2 - HEIGHT_OF_CAMERA_PIXELS / 2, 2);
     double element1Distance = Math.pow(rects[1].x + rects[1].width / 2 - WIDTH_OF_CAMERA_PIXELS / 2, 2) + 
