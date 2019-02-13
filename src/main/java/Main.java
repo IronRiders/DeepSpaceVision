@@ -29,6 +29,9 @@ import edu.wpi.first.vision.VisionThread;
 
 import org.opencv.core.Mat;
 
+import org.opencv.core.Rect;
+import org.opencv.imgproc.Imgproc;
+
 /*
    JSON format:
    {
@@ -78,6 +81,8 @@ public final class Main {
   public static int team;
   public static boolean server;
   public static List<CameraConfig> cameraConfigs = new ArrayList<>();
+  private static final Object imgLock = new Object();
+
 
   private Main() {
   }
@@ -257,8 +262,6 @@ public final class Main {
                       targetStartingXEntry.setDouble(startingX);
                       NetworkTableEntry targetEndingXEntry = table.getEntry("targetEndingX");
                       targetEndingXEntry.setDouble(endingX);
-
-
                   }
                 }     
       });
