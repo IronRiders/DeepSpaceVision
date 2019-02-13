@@ -28,14 +28,10 @@ import edu.wpi.cscore.VideoSource;
 import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.*;
-import edu.wpi.first.vision.VisionPipeline;
 import edu.wpi.first.vision.VisionThread;
 
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
-import org.opencv.core.Rect;
-import org.opencv.imgproc.Imgproc;
-
 import org.opencv.core.Rect;
 import org.opencv.imgproc.Imgproc;
 
@@ -88,6 +84,7 @@ public final class Main {
     public static int team;
     public static boolean server;
     public static List<CameraConfig> cameraConfigs = new ArrayList<>();
+    private static final Object imgLock = new Object();
   
     // Constants for Distance to robot calculations
     final static double TAPE_ANGLE = 14. / 360 * 2 * Math.PI; // In radians
@@ -99,11 +96,6 @@ public final class Main {
     // Camera Resolution: 1080p
     final static int HEIGHT_OF_CAMERA_PIXELS = 1080;
     final static int WIDTH_OF_CAMERA_PIXELS = 1920;
-
-  public static int team;
-  public static boolean server;
-  public static List<CameraConfig> cameraConfigs = new ArrayList<>();
-  private static final Object imgLock = new Object();
 
 
   private Main() {
@@ -241,55 +233,7 @@ public final class Main {
   /**
    * Main.
    */
-<<<<<<< HEAD
-  public static void main(String... args) {
-    if (args.length > 0) {
-      configFile = args[0];
-    }
 
-    // read configuration
-    if (!readConfig()) {
-      return;
-    }
-
-    // start NetworkTables
-    NetworkTableInstance ntinst = NetworkTableInstance.getDefault();
-    if (server) {
-      System.out.println("Setting up NetworkTables server");
-      ntinst.startServer();
-    } else {
-      System.out.println("Setting up NetworkTables client for team " + team);
-      ntinst.startClientTeam(team);
-    }
-     NetworkTable table = ntinst.getTable("GRIP");
-
-    // start cameras
-    List<VideoSource> cameras = new ArrayList<>();
-    for (CameraConfig cameraConfig : cameraConfigs) {
-      cameras.add(startCamera(cameraConfig));
-    }
-
-    // start image processing on camera 0 if present
-    if (cameras.size() >= 1) {
-      VisionThread visionThread = new VisionThread(cameras.get(0),
-              new GripPipeline(), pipeline -> {
-                if (!pipeline.filterContoursOutput().isEmpty()) {
-                  Rect r = Imgproc.boundingRect(pipeline.filterContoursOutput().get(0));
-                  synchronized (imgLock) {
-                      double centerX = r.x + (r.width / 2);
-                      double startingX = r.x;
-                      double endingX = r.x + r.width;
-                      NetworkTableEntry targetCenterXEntry = table.getEntry("targetCenterX");
-                      targetCenterXEntry.setDouble(centerX);
-                      NetworkTableEntry targetStartingXEntry = table.getEntry("targetStartingX");
-                      targetStartingXEntry.setDouble(startingX);
-                      NetworkTableEntry targetEndingXEntry = table.getEntry("targetEndingX");
-                      targetEndingXEntry.setDouble(endingX);
-                  }
-                }     
-      });
-      visionThread.start();
-=======
     public static void main(String... args) {
         if (args.length > 0) {
             configFile = args[0];
@@ -390,7 +334,6 @@ public final class Main {
                 return;
             }
         }
->>>>>>> e888260a3d6a6b3dc27637bbca020a8dc7edf525
     }
 
     // Gets the two contours closes to the center of the screen
