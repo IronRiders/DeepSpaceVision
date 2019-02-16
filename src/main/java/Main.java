@@ -87,11 +87,12 @@ public final class Main {
     private static final Object imgLock = new Object();
   
     // Constants for Distance to robot calculations
-    final static double TAPE_ANGLE = 14. / 360 * 2 * Math.PI; // In radians
-    final static double CAMERA_VIEW_ANGLE = 78. / 360 * 2 * Math.PI; // Double check is it diagonal angle or horizontal (in radians)
-    final static double LENGTH_OF_BOUNDING_RECTANGLE_INCHES = 2 * Math.sin(180-90-TAPE_ANGLE) + 5.5 * Math.sin(14);
-    final static double HEIGHT_OF_BOUNDING_RECTANGLE_INCHES = 5.5 * Math.sin(TAPE_ANGLE) + 2 * Math.cos(180 - 90 - TAPE_ANGLE);
-    final static double distanceBetweenTapeCentersInches = LENGTH_OF_BOUNDING_RECTANGLE_INCHES + 8; // 2 * (Width of bounding square) (times 2 squares / half their width) / 2 + distance between top inner tips
+    private final static double TAPE_ANGLE = 14. / 360 * 2 * Math.PI; // In radians
+    private final static double CAMERA_VIEW_ANGLE_HORIZONTAL = 70.42 / 360 * 2 * Math.PI; // horizontal FOV (in radians)
+    private final static double CAMERA_VIEW_ANGLE_VERTICAL = 43.3 / 360 * 2 * Math.PI; // vertical FOV (in radians)
+    private final static double LENGTH_OF_BOUNDING_RECTANGLE_INCHES = 2 * Math.sin(180-90-TAPE_ANGLE) + 5.5 * Math.sin(14);
+    private final static double HEIGHT_OF_BOUNDING_RECTANGLE_INCHES = 5.5 * Math.sin(TAPE_ANGLE) + 2 * Math.cos(180 - 90 - TAPE_ANGLE);
+    private final static double distanceBetweenTapeCentersInches = LENGTH_OF_BOUNDING_RECTANGLE_INCHES + 8; // 2 * (Width of bounding square) (times 2 squares / half their width) / 2 + distance between top inner tips
   
     // Camera Resolution: 1080p
     final static int HEIGHT_OF_CAMERA_PIXELS = 1080;
@@ -289,13 +290,13 @@ public final class Main {
                             distanceBetweenTapeCentersPixels = centerX2 - centerX1;
                             tapeCenterPixelsToCenterScreen = (centerX2 + centerX1) / 2 - WIDTH_OF_CAMERA_PIXELS; // finds how far right the tapes are from the center of the screen in pixels
                             inchesPerPixel = distanceBetweenTapeCentersInches / distanceBetweenTapeCentersPixels ;
-                            newAngle = distanceBetweenTapeCentersPixels/WIDTH_OF_CAMERA_PIXELS * CAMERA_VIEW_ANGLE/2; // half of cone of vision is 39 degrees
+                            newAngle = distanceBetweenTapeCentersPixels/WIDTH_OF_CAMERA_PIXELS * CAMERA_VIEW_ANGLE_HORIZONTAL / 2; // half of cone of vision is 39 degrees
 
                             
                             // these values will be used to determing the path of the robot
                             distanceToRobotInches = (distanceBetweenTapeCentersInches / 2) / Math.tan(newAngle);
                             tapeDistanceRightInches = tapeCenterPixelsToCenterScreen * inchesPerPixel;
-                            distanceToRobotBasedOnTapeHeight = (heightOfTapePixels / 2 * inchesPerPixel) / Math.tan(CAMERA_VIEW_ANGLE / 2 * heightOfTapePixels / HEIGHT_OF_CAMERA_PIXELS);
+                            distanceToRobotBasedOnTapeHeight = (heightOfTapePixels / 2 * inchesPerPixel) / Math.tan(CAMERA_VIEW_ANGLE_HORIZONTAL / 2 * heightOfTapePixels / HEIGHT_OF_CAMERA_PIXELS);
 
                             // Output values to NetworkTables if two calculated values are within X percent
                             if(Math.abs(distanceToRobotBasedOnTapeHeight - distanceToRobotInches)/ distanceToRobotInches < 0.10) {
