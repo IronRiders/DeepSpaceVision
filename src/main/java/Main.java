@@ -253,10 +253,9 @@ public final class Main {
             System.out.println("Setting up NetworkTables client for team " + team);
             ntinst.startClientTeam(team);
         }
-        NetworkTable table = ntinst.getTable("GRIP");
+        
         // Creating networktables and getting their entrees
-        // NetworkTableInstance piOutpuTableInstance = NetworkTableInstance.create();
-        // NetworkTable piOutpuTable = piOutpuTableInstance.getTable("PI_Output");
+        NetworkTable table = ntinst.getTable("GRIP");
         NetworkTableEntry distanceToRobotEntry = table.getEntry("DistanceToRobotInches");
         NetworkTableEntry distanceRightToRobotEntry = table.getEntry("DistanceRightToRobotInches");
         NetworkTableEntry angleOfRobotToTapeEntry = table.getEntry("AngleOfRobotToTapeRadians"); // Not Implemented
@@ -286,20 +285,9 @@ public final class Main {
                             int centerX2 = contours[1].x + (contours[1].width / 2);
                             int heightOfTapePixels = (contours[0].height + contours[1].height) / 2;
 
-
-                            // Not Needed because x1 and x2 are found above
-                            // int contour1X, contour2X;
-                            // NetworkTableEntry contour1XTableValue = table.getEntry("contour1X"); // Needs to be changed to match real networktable key
-                            // NetworkTableEntry contour2XTableValue = table.getEntry("contour2X");
-                            // contour1X = (int) contour1XTableValue.getNumber(0);
-                            // contour2X = (int) contour2XTableValue.getNumber(0);
-
                             // Calculate the distance between the robot and the tape.
                             distanceBetweenTapeCentersPixels = centerX2 - centerX1;
-                            tapeCenterPixelsToCenterScreen = (centerX2 + centerX1) / 2 - WIDTH_OF_CAMERA_PIXELS; // finds how far right
-                                                                                                            // the tapes are from
-                                                                                                            // the center of the
-                                                                                                            // screen in pixels
+                            tapeCenterPixelsToCenterScreen = (centerX2 + centerX1) / 2 - WIDTH_OF_CAMERA_PIXELS; // finds how far right the tapes are from the center of the screen in pixels
                             inchesPerPixel = distanceBetweenTapeCentersInches / distanceBetweenTapeCentersPixels ;
                             newAngle = distanceBetweenTapeCentersPixels/WIDTH_OF_CAMERA_PIXELS * CAMERA_VIEW_ANGLE/2; // half of cone of vision is 39 degrees
 
