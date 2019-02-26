@@ -260,6 +260,10 @@ public final class Main {
         NetworkTableEntry distanceToRobotEntry = table.getEntry("DistanceToRobotInches");
         NetworkTableEntry distanceRightToRobotEntry = table.getEntry("DistanceRightToRobotInches");
         NetworkTableEntry angleOfRobotToTapeEntry = table.getEntry("AngleOfRobotToTapeRadians"); // Not Implemented
+        int angle = 45; //random value
+        double cameraHeightInches = 42; //guessed height 
+        double cameraOffsetRightInchesFromCenter = 6; //random value
+
 
         // start cameras
         List<VideoSource> cameras = new ArrayList<>();
