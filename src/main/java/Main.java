@@ -90,8 +90,18 @@ public final class Main {
     private final static double TAPE_ANGLE = 14. / 360 * 2 * Math.PI; // In radians
     private final static double CAMERA_VIEW_ANGLE_HORIZONTAL = 70.42 / 360 * 2 * Math.PI; // horizontal FOV (in radians)
     private final static double CAMERA_VIEW_ANGLE_VERTICAL = 43.3 / 360 * 2 * Math.PI; // vertical FOV (in radians)
-    private final static double LENGTH_OF_BOUNDING_RECTANGLE_INCHES = 2 * Math.sin(180-90-TAPE_ANGLE) + 5.5 * Math.sin(14);
-    private final static double HEIGHT_OF_BOUNDING_RECTANGLE_INCHES = 5.5 * Math.sin(TAPE_ANGLE) + 2 * Math.cos(180 - 90 - TAPE_ANGLE);
+
+    private final static double BB_WIDTH_1 = 2 * Math.cos(TAPE_ANGLE);
+    private final static double BB_WIDTH_2 = 5.5 * Math.sin(TAPE_ANGLE);
+    private final static double BB_WIDTH = BB_WIDTH_1 + BB_WIDTH_2;
+
+    private final static double BB_HEIGHT_1 = 5.5 * Math.cos(TAPE_ANGLE);
+    private final static double BB_HEIGHT_2 = 2 * Math.sin(TAPE_ANGLE);
+    private final static double BB_HEIGHT = BB_HEIGHT_1 + BB_HEIGHT_2;
+
+    // Too confusing
+    //private final static double LENGTH_OF_BOUNDING_RECTANGLE_INCHES = 2 * Math.cos(2*Math.PI-Math.PI-TAPE_ANGLE) + 5.5 * Math.sin(14);
+    //private final static double HEIGHT_OF_BOUNDING_RECTANGLE_INCHES = 5.5 * Math.sin(TAPE_ANGLE) + 2 * Math.cos(180 - 90 - TAPE_ANGLE);
     private final static double distanceBetweenTapeCentersInches = LENGTH_OF_BOUNDING_RECTANGLE_INCHES + 8; // 2 * (Width of bounding square) (times 2 squares / half their width) / 2 + distance between top inner tips
   
     // Camera Resolution: 1080p
@@ -271,7 +281,7 @@ public final class Main {
         // start image processing on camera 0 if present
         if (cameras.size() >= 1) {
         VisionThread visionThread = new VisionThread(cameras.get(0),
-                new GripPipeline(), pipeline -> {
+                new GripPipelineMV(), pipeline -> {
                     if (!pipeline.filterContoursOutput().isEmpty() && pipeline.filterContoursOutput().size() > 1) { // Everything used inside (from the outside) has to be static
                         Rect[] contours = getTargetTapes(pipeline);
                         synchronized (contours[0]) {
@@ -326,7 +336,7 @@ public final class Main {
     }
 
     // Gets the two contours closes to the center of the screen
-    private static Rect[] getTargetTapes(GripPipeline pipeline) {
+    private static Rect[] getTargetTapes(GripPipelineMV pipeline) {
         ArrayList<MatOfPoint> contours = pipeline.filterContoursOutput();
         Rect[] rects = {Imgproc.boundingRect(contours.get(0)), Imgproc.boundingRect(contours.get(1))};
         if(pipeline.filterContoursOutput().size() == 2) {
