@@ -281,7 +281,7 @@ public final class Main {
         // start image processing on camera 0 if present
         if (cameras.size() >= 1) {
         VisionThread visionThread = new VisionThread(cameras.get(0),
-                new GripPipelineMV(), pipeline -> {
+                new GripPipelineMV() pip, pipeline -> {
                     if (!pipeline.filterContoursOutput().isEmpty() && pipeline.filterContoursOutput().size() > 1) { // Everything used inside (from the outside) has to be static
                         Rect[] contours = getTargetTapes(pipeline);
                         synchronized (contours[0]) {
